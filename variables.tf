@@ -95,6 +95,7 @@ variable "clusters" {
       })
       desired_count = number # Desired number of tasks
       network = optional(object({
+        assign_public_ip = optional(bool)
         security_groups_tag = object({
           key    = string       # Key of the tag
           values = list(string) # Value of the tag

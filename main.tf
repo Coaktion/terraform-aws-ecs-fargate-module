@@ -113,7 +113,8 @@ resource "aws_ecs_service" "ecs_service" {
   network_configuration {
     security_groups  = each.value.network == null ? [aws_security_group.ecs[0].id] : data.aws_security_groups.services[each.key].ids
     subnets          = each.value.network == null ? aws_subnet.private_subnet.*.id : data.aws_subnets.services[each.key].ids
-    assign_public_ip = true
+    assign_public_ip = each.value.network == null ? true : coalesce(each.value.network.assign_public_ip, true)
+
   }
 
   tags = var.tags

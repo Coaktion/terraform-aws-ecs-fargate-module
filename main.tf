@@ -26,7 +26,7 @@ resource "null_resource" "build_docker_image" {
   }
 
   provisioner "local-exec" {
-    command = "docker build -t ${each.value.name}:latest ${each.value.dockerfile_path}"
+    command = "docker build -t ${each.value.name}:latest ${each.value.dockerfile_path} --build-arg GITHUB_TOKEN=$GITHUB_TOKEN"
     environment = {
       AWS_ACCESS_KEY_ID     = var.aws_access_key_id
       AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key

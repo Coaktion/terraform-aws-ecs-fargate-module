@@ -10,7 +10,7 @@ resource "aws_ecr_repository" "repository" {
 }
 
 resource "null_resource" "build_docker_image" {
-  for_each = local.ecr_repositories
+  for_each = var.enable_docker_build ? local.ecr_repositories : {}
 
   triggers = {
     always_run = "${timestamp()}"
@@ -26,7 +26,7 @@ resource "null_resource" "build_docker_image" {
   }
 
   provisioner "local-exec" {
-    command = "docker build -t ${each.value.name}:latest ${each.value.dockerfile_path} --build-arg GITHUB_TOKEN=$GITHUB_TOKEN"
+    command = "docker build -t ${each.value.name}:${var.image_tag} ${each.value.dockerfile_path} --build-arg GITHUB_TOKEN=$GITHUB_TOKEN"
     environment = {
       AWS_ACCESS_KEY_ID     = var.aws_access_key_id
       AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
@@ -35,7 +35,7 @@ resource "null_resource" "build_docker_image" {
   }
 
   provisioner "local-exec" {
-    command = "docker tag ${each.value.name}:latest ${aws_ecr_repository.repository[each.value.name].repository_url}:latest"
+    command = "docker tag ${each.value.name}:${var.image_tag} ${aws_ecr_repository.repository[each.value.name].repository_url}:${var.image_tag}"
     environment = {
       AWS_ACCESS_KEY_ID     = var.aws_access_key_id
       AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
@@ -44,7 +44,7 @@ resource "null_resource" "build_docker_image" {
   }
 
   provisioner "local-exec" {
-    command = "docker push ${aws_ecr_repository.repository[each.value.name].repository_url}:latest"
+    command = "docker push ${aws_ecr_repository.repository[each.value.name].repository_url}:${var.image_tag}"
     environment = {
       AWS_ACCESS_KEY_ID     = var.aws_access_key_id
       AWS_SECRET_ACCESS_KEY = var.aws_secret_access_key
@@ -60,7 +60,7 @@ resource "aws_ecs_task_definition" "task-def" {
   container_definitions = jsonencode([
     for container in each.value.task_definition.container_definitions : {
       name         = container.name
-      image        = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${container.repository_name}:latest"
+      image        = "${var.account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${container.repository_name}:${var.image_tag}"
       portMappings = container.portMappings
       environment  = container.environment
       secrets      = container.secret_manager != null ? local.secrets[container.name] : container.secrets

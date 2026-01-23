@@ -108,3 +108,15 @@ variable "clusters" {
     }))
   }))
 }
+
+variable "enable_docker_build" {
+  description = "If true (as default), the Docker image will be built and uploaded to ECR via Terraform. If false, the module will skip these steps"
+  type        = bool
+  default     = true   
+}
+
+variable "image_tag" {
+  description = "Image tag"
+  type        = string
+  default     = "latest"   
+}
